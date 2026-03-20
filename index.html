@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
   <title>Cicatrices del Umbral - Sincronizado</title>
   <!-- Tailwind + Google Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -11,10 +11,17 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
-    * { user-select: none; }
+    * { 
+      user-select: none; 
+      -webkit-tap-highlight-color: transparent;
+      touch-action: pan-x pan-y; /* Evita zoom deforme en elementos interactivos */
+    }
     body {
       background: #0b0a0a;
       font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
     }
     .bg-ritual {
       background-image: radial-gradient(rgba(180, 70, 60, 0.08) 1px, transparent 1px);
@@ -70,20 +77,130 @@
       border-bottom: 1px solid #4a2a2a;
     }
     .tab-inactive:hover { background: #2d2422; color: #f3b37c; }
-    .skill-card { transition: all 0.2s; }
-    .skill-card:hover { transform: translateY(-2px); border-left-width: 6px; }
-    input.editable-pool, input.editable-name, input.editable-desc {
-      background: #0f0c0b;
-      border: 1px solid #7f2a1d;
+    
+    /* SKILL CARDS - DISEÑO COMPACTO MÓVIL 3 COLUMNAS */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+      gap: 8px;
+    }
+    @media (min-width: 420px) {
+      .skills-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .skill-card-mobile {
+      background: rgba(30, 25, 24, 0.9);
+      border-left: 3px solid #b91c1c;
+      border-radius: 12px;
+      padding: 6px 6px 8px 6px;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .skill-card-mobile:active {
+      transform: scale(0.98);
+    }
+    .skill-name-mobile {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #fbbf24;
+      text-align: center;
+      line-height: 1.2;
+      word-break: break-word;
+      background: rgba(0,0,0,0.4);
+      padding: 3px 4px;
       border-radius: 8px;
-      color: #ffb085;
+      cursor: pointer;
+    }
+    .skill-desc-mobile {
+      font-size: 0.55rem;
+      color: #9ca3af;
+      text-align: center;
+      line-height: 1.2;
+      word-break: break-word;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .skill-dice-area {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0f0c0b;
+      border-radius: 20px;
+      padding: 2px 6px;
+      border: 1px solid #7f2a1d;
+      gap: 4px;
+    }
+    .skill-dice-value {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #ff9f6e;
+      background: #1f1917;
+      padding: 0px 6px;
+      border-radius: 16px;
+      min-width: 32px;
+      text-align: center;
+      font-family: monospace;
+    }
+    .skill-roll-btn {
+      background: #9b2c1d;
+      border: none;
+      color: white;
+      font-size: 0.65rem;
       font-weight: bold;
       padding: 4px 8px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      transition: 0.1s;
+      line-height: 1;
     }
-    input.editable-name { width: 100px; font-size: 0.8rem; }
-    input.editable-desc { width: 130px; font-size: 0.7rem; }
-    input.editable-pool { width: 55px; text-align: center; font-size: 1rem; }
-    input:focus { outline: none; border-color: #f97316; box-shadow: 0 0 6px #f97316; }
+    .skill-roll-btn:active {
+      transform: scale(0.94);
+    }
+    .edit-icon-micro {
+      background: #3a2a28;
+      border-radius: 12px;
+      padding: 2px 6px;
+      font-size: 0.55rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .edit-icon-micro:hover {
+      background: #7f2a1d;
+    }
+    .skill-edit-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    input.editable-name-mobile, input.editable-desc-mobile {
+      background: #0f0c0b;
+      border: 1px solid #f97316;
+      border-radius: 12px;
+      color: #ffb085;
+      font-size: 0.6rem;
+      padding: 2px 6px;
+      width: 100%;
+      text-align: center;
+    }
+    input.editable-pool-mobile {
+      width: 42px;
+      background: #0f0c0b;
+      border: 1px solid #f97316;
+      border-radius: 16px;
+      text-align: center;
+      color: #ffb085;
+      font-size: 0.75rem;
+      padding: 2px 0;
+    }
     .player-name-edit {
       background: transparent;
       border: 1px dashed #b45353;
@@ -91,154 +208,144 @@
       padding: 2px 8px;
       font-weight: bold;
       color: #ffcf9a;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       cursor: pointer;
+      max-width: 130px;
     }
-    .player-name-edit:hover { background: #3b1e1a; border: 1px solid #f97316; }
     .online-badge { animation: pulse 2s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .edit-icon-btn {
-      background: #2d2a28;
-      border-radius: 6px;
-      padding: 2px 6px;
-      font-size: 10px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .edit-icon-btn:hover { background: #7f2a1d; color: white; }
-    .dice-result {
-      transition: all 0.2s ease;
-    }
-    .dice-result:hover {
-      transform: scale(1.05);
-    }
+    .dice-result:hover { transform: scale(1.05); }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .fade-in {
-      animation: fadeIn 0.3s ease-out;
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    
+    /* Ajustes para sliders y controles */
+    input[type="range"] {
+      touch-action: pan-x pinch-zoom;
     }
-    .last-roll-header {
-      font-size: 10px;
-      letter-spacing: 2px;
+    .container-mobile-padding {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+    button, .skill-card-mobile, .tab-player, .player-name-edit {
+      touch-action: manipulation;
     }
   </style>
 </head>
 <body class="bg-ritual min-h-screen flex flex-col text-gray-200">
 
   <header class="sticky top-0 z-30 bg-black/70 backdrop-blur-md border-b border-red-900/40 shadow-md">
-    <div class="max-w-3xl mx-auto px-5 py-3 flex justify-between items-center">
-      <div class="flex items-center gap-2">
-        <span class="text-2xl">🜟</span>
-        <h1 class="font-['Cinzel'] text-xl tracking-wider text-red-300 font-semibold">CICATRICES DEL UMBRAL</h1>
+    <div class="max-w-3xl mx-auto px-4 py-2 flex justify-between items-center">
+      <div class="flex items-center gap-1">
+        <span class="text-xl">🜟</span>
+        <h1 class="font-['Cinzel'] text-base tracking-wider text-red-300 font-semibold leading-tight">CICATRICES DEL UMBRAL</h1>
       </div>
-      <div class="flex items-center gap-2">
-        <span class="text-[10px] text-green-400 flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full online-badge"></span> Sincronizado</span>
+      <div class="flex items-center gap-1">
+        <span class="text-[9px] text-green-400 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full online-badge"></span> Sinc</span>
       </div>
     </div>
   </header>
 
-  <main class="flex-grow max-w-2xl mx-auto w-full px-4 py-5 pb-28">
+  <main class="flex-grow max-w-2xl mx-auto w-full px-3 py-3 pb-28">
     
     <!-- ÁREA DE RESULTADOS EN TIEMPO REAL -->
-    <div class="bg-black/40 backdrop-blur-sm rounded-2xl border border-red-900/40 p-5 mb-6 shadow-2xl">
-      <div class="flex justify-between items-end flex-wrap gap-2 mb-3">
+    <div class="bg-black/40 backdrop-blur-sm rounded-2xl border border-red-900/40 p-3 mb-4 shadow-2xl">
+      <div class="flex justify-between items-center flex-wrap gap-1 mb-2">
         <div>
-          <span class="text-[11px] font-bold uppercase tracking-[0.2em] text-red-400/80">Última Tirada</span>
-          <div id="lastRollerName" class="text-xs text-amber-400/80 mt-1 font-mono"></div>
+          <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-red-400/80">Última Tirada</span>
+          <div id="lastRollerName" class="text-[10px] text-amber-400/80 mt-0.5 font-mono"></div>
         </div>
-        <div id="successCountDisplay" class="font-['Cinzel'] text-4xl font-bold text-red-400 drop-shadow-md">—</div>
+        <div id="successCountDisplay" class="font-['Cinzel'] text-2xl font-bold text-red-400 drop-shadow-md">—</div>
       </div>
-      <div id="diceVisualContainer" class="flex flex-wrap gap-3 min-h-[100px] items-center justify-start mt-2 p-3 bg-black/30 rounded-xl border border-white/5">
-        <div class="text-sm text-gray-400 italic w-full text-center" id="placeholderDiceMsg">Conectando a la nube...</div>
+      <div id="diceVisualContainer" class="flex flex-wrap gap-2 min-h-[80px] items-center justify-start mt-1 p-2 bg-black/30 rounded-xl border border-white/5">
+        <div class="text-[11px] text-gray-400 italic w-full text-center" id="placeholderDiceMsg">Conectando...</div>
       </div>
-      <div id="specialMessage" class="mt-3 text-xs font-semibold text-center uppercase tracking-wide"></div>
-      <div id="lastRollDetails" class="text-[10px] text-center text-gray-500 mt-2"></div>
+      <div id="specialMessage" class="mt-2 text-[10px] font-semibold text-center uppercase tracking-wide"></div>
+      <div id="lastRollDetails" class="text-[9px] text-center text-gray-500 mt-1"></div>
     </div>
 
     <!-- BOTÓN PRINCIPAL TIRAR DADOS -->
-    <button id="rollButton" class="w-full mb-6 bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold py-5 rounded-xl text-2xl tracking-wider shadow-2xl flex items-center justify-center gap-3 border border-red-500/50 transition-all duration-200">
+    <button id="rollButton" class="w-full mb-4 bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold py-3 rounded-xl text-lg tracking-wider shadow-2xl flex items-center justify-center gap-2 border border-red-500/50 transition-all duration-200">
       <span>🎲</span> TIRAR DADOS <span>🎲</span>
     </button>
 
-    <!-- PESTAÑAS DE JUGADORES -->
-    <div class="mb-6">
-      <div class="flex flex-wrap gap-1 border-b border-red-900/40">
-        <button data-player="german" class="tab-player px-5 py-2 rounded-t-lg font-bold text-sm transition-all tab-active">🩸 GERMAN</button>
-        <button data-player="carlos" class="tab-player px-5 py-2 rounded-t-lg font-bold text-sm transition-all tab-inactive">🗡️ CARLOS</button>
-        <button data-player="ale" class="tab-player px-5 py-2 rounded-t-lg font-bold text-sm transition-all tab-inactive">🌙 ALE</button>
-        <button data-player="bruno" class="tab-player px-5 py-2 rounded-t-lg font-bold text-sm transition-all tab-inactive">🏛️ BRUNO</button>
+    <!-- AJUSTES DE TIRADA COMPACTOS -->
+    <div class="bg-gradient-to-br from-neutral-900/80 to-neutral-950/90 rounded-2xl border border-red-800/30 p-3 mb-4">
+      <div class="flex justify-between items-center border-b border-red-900/30 pb-1 mb-2">
+        <span class="font-bold text-red-300 text-xs uppercase tracking-wider">🎲 AJUSTES</span>
+        <span id="currentPlayerBadge" class="bg-red-950/60 px-2 py-0.5 rounded-full text-[10px] text-amber-300">Jugador</span>
       </div>
-      <div class="mt-2 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-          <span class="text-[10px] text-gray-400">Editar nombre:</span>
-          <span id="playerNameDisplay" class="player-name-edit inline-block" contenteditable="true">GERMAN</span>
-        </div>
-        <div class="text-[9px] text-amber-700/60">✎ Todos ven los cambios</div>
-      </div>
-    </div>
-
-    <!-- BOTONES DE HABILIDADES EDITABLES -->
-    <div class="bg-gradient-to-br from-neutral-900/80 to-neutral-950/90 rounded-2xl border border-red-800/30 p-5 mb-6">
-      <div class="flex justify-between items-center border-b border-red-900/30 pb-2 mb-4">
-        <span class="font-bold text-red-300 text-sm uppercase tracking-wider">⚔️ HABILIDADES PERSONALIZABLES</span>
-        <span class="text-[10px] text-amber-500/70">Edita nombre, descripción y dados</span>
-      </div>
-      <div id="skillsContainer" class="grid grid-cols-1 gap-3"></div>
-      <div class="mt-4 text-center text-[10px] text-gray-500 italic">
-        💡 Haz clic en los íconos ✎ para editar cada campo. Los cambios se guardan en la nube.
-      </div>
-    </div>
-
-    <!-- AJUSTES DE TIRADA -->
-    <div class="bg-gradient-to-br from-neutral-900/80 to-neutral-950/90 rounded-2xl border border-red-800/30 p-5 mb-6">
-      <div class="flex justify-between items-center border-b border-red-900/30 pb-2 mb-4">
-        <span class="font-bold text-red-300 text-sm uppercase tracking-wider">🎲 AJUSTES DE TIRADA</span>
-        <span id="currentPlayerBadge" class="bg-red-950/60 px-3 py-1 rounded-full text-xs text-amber-300">Jugador activo</span>
-      </div>
-      
-      <div class="mb-5">
-        <div class="flex justify-between text-xs text-gray-400 mb-1">
+      <div class="mb-2">
+        <div class="flex justify-between text-[10px] text-gray-400 mb-0.5">
           <span>Dados manuales</span>
-          <span id="customDiceIndicator" class="bg-black/50 px-2 rounded">4 dados</span>
+          <span id="customDiceIndicator" class="bg-black/50 px-1.5 rounded text-[10px]">4 dados</span>
         </div>
-        <input type="range" id="customDiceSlider" min="1" max="15" value="4" step="1" class="w-full h-2 bg-red-950 rounded-lg accent-red-700">
+        <input type="range" id="customDiceSlider" min="1" max="15" value="4" step="1" class="w-full h-1.5 bg-red-950 rounded-lg accent-red-700">
       </div>
-      
-      <div class="mb-5">
-        <div class="flex justify-between items-center mb-2">
-          <label class="text-xs font-bold text-amber-300/80 uppercase">Dificultad (éxito ≥ )</label>
-          <span id="difficultyValue" class="bg-black/60 text-amber-300 font-mono font-bold text-xl px-4 py-0.5 rounded-lg border border-amber-800">6</span>
+      <div>
+        <div class="flex justify-between items-center mb-0.5">
+          <label class="text-[10px] font-bold text-amber-300/80 uppercase">Dificultad (≥)</label>
+          <span id="difficultyValue" class="bg-black/60 text-amber-300 font-mono font-bold text-base px-2 py-0 rounded-lg border border-amber-800">6</span>
         </div>
-        <input type="range" id="difficultySlider" min="2" max="10" value="6" step="1" class="w-full h-2 bg-amber-950 rounded-lg accent-amber-600">
-        <div class="flex justify-between text-[10px] text-gray-400 mt-1">
-          <span>2 (fácil)</span><span>6 (estándar)</span><span>10 (heroico)</span>
+        <input type="range" id="difficultySlider" min="2" max="10" value="6" step="1" class="w-full h-1.5 bg-amber-950 rounded-lg accent-amber-600">
+        <div class="flex justify-between text-[8px] text-gray-400 mt-0.5">
+          <span>2 fácil</span><span>6 estándar</span><span>10 heroico</span>
         </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑAS DE JUGADORES COMPACTAS -->
+    <div class="mb-4">
+      <div class="flex flex-wrap gap-0.5 border-b border-red-900/40">
+        <button data-player="german" class="tab-player px-3 py-1.5 rounded-t-lg font-bold text-[11px] transition-all tab-active">🩸 GERMAN</button>
+        <button data-player="carlos" class="tab-player px-3 py-1.5 rounded-t-lg font-bold text-[11px] transition-all tab-inactive">🗡️ CARLOS</button>
+        <button data-player="ale" class="tab-player px-3 py-1.5 rounded-t-lg font-bold text-[11px] transition-all tab-inactive">🌙 ALE</button>
+        <button data-player="bruno" class="tab-player px-3 py-1.5 rounded-t-lg font-bold text-[11px] transition-all tab-inactive">🏛️ BRUNO</button>
+      </div>
+      <div class="mt-1 flex justify-between items-center">
+        <div class="flex items-center gap-1">
+          <span class="text-[8px] text-gray-400">Nombre:</span>
+          <span id="playerNameDisplay" class="player-name-edit inline-block text-xs" contenteditable="true">GERMAN</span>
+        </div>
+        <div class="text-[7px] text-amber-700/60">✎ cloud</div>
+      </div>
+    </div>
+
+    <!-- BOTONES DE HABILIDADES EN GRID 3 COLUMNAS (MÓVIL PERFECTO) -->
+    <div class="bg-gradient-to-br from-neutral-900/80 to-neutral-950/90 rounded-2xl border border-red-800/30 p-3 mb-4">
+      <div class="flex justify-between items-center border-b border-red-900/30 pb-1 mb-2">
+        <span class="font-bold text-red-300 text-[11px] uppercase tracking-wider">⚔️ HABILIDADES</span>
+        <span class="text-[8px] text-amber-500/70">✎ edita campos</span>
+      </div>
+      <div id="skillsContainer" class="skills-grid"></div>
+      <div class="mt-2 text-center text-[8px] text-gray-500 italic">
+        💡 Toca ✎ para editar | Botón 🎲 tira habilidad
       </div>
     </div>
     
     <!-- HISTORIAL SINCRONIZADO -->
-    <div class="bg-black/30 rounded-2xl border border-red-900/30 p-4">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-sm">📜</span>
-        <span class="font-bold text-xs uppercase tracking-wider text-red-300">Historial Compartido</span>
-        <button id="clearHistoryBtn" class="ml-auto text-[10px] bg-neutral-800 px-2 py-1 rounded-full text-gray-400 hover:text-red-300">Limpiar</button>
+    <div class="bg-black/30 rounded-2xl border border-red-900/30 p-3">
+      <div class="flex items-center gap-1 mb-2">
+        <span class="text-xs">📜</span>
+        <span class="font-bold text-[10px] uppercase tracking-wider text-red-300">Historial</span>
+        <button id="clearHistoryBtn" class="ml-auto text-[9px] bg-neutral-800 px-2 py-0.5 rounded-full text-gray-400 hover:text-red-300">Limpiar</button>
       </div>
-      <div id="historyLog" class="max-h-44 overflow-y-auto space-y-2 pr-1 text-sm">
-        <div class="text-gray-500 text-center text-xs italic">Cargando historial...</div>
+      <div id="historyLog" class="max-h-36 overflow-y-auto space-y-1 pr-1 text-[11px]">
+        <div class="text-gray-500 text-center text-[10px] italic">Cargando...</div>
       </div>
     </div>
   </main>
 
-  <nav class="glass-nav fixed bottom-0 left-0 w-full z-40 flex justify-around items-center py-2 px-4 border-t border-red-800/30">
-    <div class="flex flex-col items-center text-red-400"><span>🎲</span><span class="text-[9px] uppercase">Sincronizado</span></div>
-    <div class="text-gray-500 text-xs opacity-60 font-mono">⚰️ CICATRICES DEL UMBRAL</div>
-    <div class="text-red-800/50 text-[10px]">Cloud</div>
+  <nav class="glass-nav fixed bottom-0 left-0 w-full z-40 flex justify-around items-center py-1.5 px-2 border-t border-red-800/30">
+    <div class="flex flex-col items-center text-red-400"><span class="text-sm">🎲</span><span class="text-[7px] uppercase">Sync</span></div>
+    <div class="text-gray-500 text-[8px] opacity-60 font-mono">⚰️ CICATRICES</div>
+    <div class="text-red-800/50 text-[8px]">Cloud</div>
   </nav>
 
   <script>
-    // ==================== CONFIGURACIÓN DE FIREBASE ====================
+    // ==================== CONFIGURACIÓN DE FIREBASE (IDÉNTICA) ====================
     const firebaseConfig = {
       apiKey: "AIzaSyAlQc8xaiy0E6DbiTUOi40zPDyRsyBBXRo",
       authDomain: "cicatrices-del-umbral.firebaseapp.com",
@@ -247,19 +354,17 @@
       messagingSenderId: "648673666872",
       appId: "1:648673666872:web:1347aa7d13c187ba5c83cd"
     };
-    
     firebaseConfig.databaseURL = "https://cicatrices-del-umbral-default-rtdb.firebaseio.com";
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     
-    // ==================== ESTRUCTURA DE DATOS ====================
     const defaultSkills = [
-      { id: "perception", name: "👁️ PERCEPCIÓN", desc: "Percepción + Inteligencia" },
-      { id: "alert", name: "🕯️ ALERTA", desc: "Percepción + Vigilancia" },
-      { id: "combat", name: "🗡️ COMBATE", desc: "Destreza + Pelea" },
-      { id: "persuasion", name: "🎭 LABIA", desc: "Carisma + Persuasión" },
-      { id: "stealth", name: "🏃 ESCABULLIRSE", desc: "Destreza + Sigilo" },
-      { id: "occult", name: "📜 OCULTISMO", desc: "Inteligencia + Ocultismo" }
+      { id: "perception", name: "👁️ PERCEPCIÓN", desc: "Percepción+Intel" },
+      { id: "alert", name: "🕯️ ALERTA", desc: "Percepción+Vigil" },
+      { id: "combat", name: "🗡️ COMBATE", desc: "Destreza+Pelea" },
+      { id: "persuasion", name: "🎭 LABIA", desc: "Carisma+Persuasión" },
+      { id: "stealth", name: "🏃 ESCABULLIRSE", desc: "Destreza+Sigilo" },
+      { id: "occult", name: "📜 OCULTISMO", desc: "Intel+Ocultismo" }
     ];
     
     const defaultPlayersData = {
@@ -271,7 +376,6 @@
     
     let skillsCustomNames = {};
     let skillsCustomDescs = {};
-    
     let currentPlayer = "german";
     let currentSkillDice = null;
     let pendingDiceCount = 4;
@@ -294,556 +398,97 @@
     const playerNameDisplay = document.getElementById('playerNameDisplay');
     const currentPlayerBadge = document.getElementById('currentPlayerBadge');
     
-    // ==================== SINCRONIZACIÓN DE LA ÚLTIMA TIRADA EN TIEMPO REAL ====================
+    // ==================== FUNCIONES FIREBASE (MISMA LÓGICA) ====================
     function listenLastRoll() {
-      const lastRollRef = database.ref('lastRoll');
-      lastRollRef.on('value', (snapshot) => {
+      database.ref('lastRoll').on('value', (snapshot) => {
         const rollData = snapshot.val();
-        if (rollData && rollData.results) {
-          // Actualizar la visualización para todos los jugadores
-          displayFinalRollFromFirebase(rollData);
-        }
+        if (rollData && rollData.results) displayFinalRollFromFirebase(rollData);
       });
     }
-    
     function saveLastRollToFirebase(rollData, playerId, playerName, diceUsed) {
-      const lastRollData = {
-        playerId: playerId,
-        playerName: playerName,
-        timestamp: Date.now(),
-        results: rollData.results,
-        successes: rollData.successes,
-        isBotch: rollData.isBotch,
-        message: rollData.message,
-        totalDiceThrown: rollData.totalDiceThrown,
-        difficulty: rollData.difficulty,
-        diceUsed: diceUsed
-      };
-      database.ref('lastRoll').set(lastRollData);
+      database.ref('lastRoll').set({
+        playerId, playerName, timestamp: Date.now(), results: rollData.results,
+        successes: rollData.successes, isBotch: rollData.isBotch, message: rollData.message,
+        totalDiceThrown: rollData.totalDiceThrown, difficulty: rollData.difficulty, diceUsed
+      });
     }
-    
     function displayFinalRollFromFirebase(rollData) {
       const { results, successes, isBotch, message, totalDiceThrown, difficulty, playerName } = rollData;
-      
-      if (isBotch) {
-        successDisplay.innerText = '⚰️ PIFIA ⚰️';
-        successDisplay.classList.add('text-red-500');
-      } else {
-        successDisplay.innerText = `${successes} ÉXITO${successes !== 1 ? 'S' : ''}`;
-        successDisplay.classList.remove('text-red-500');
-      }
-      
+      if (isBotch) { successDisplay.innerText = '⚰️ PIFIA ⚰️'; successDisplay.classList.add('text-red-500'); }
+      else { successDisplay.innerText = `${successes} ÉXITO${successes !== 1 ? 'S' : ''}`; successDisplay.classList.remove('text-red-500'); }
       lastRollerName.innerHTML = `🎲 ${playerName || 'Alguien'} tiró`;
       lastRollDetails.innerHTML = `${totalDiceThrown}d10 (dif:${difficulty})`;
-      
       diceVisualContainer.innerHTML = '';
       results.forEach(val => {
         const diceDiv = document.createElement('div');
-        diceDiv.className = 'dice-result relative w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-md fade-in';
-        
-        if (val === 1) {
-          diceDiv.className += ' bg-red-950 border-2 border-red-600 text-red-300';
-          const curse = document.createElement('span');
-          curse.className = 'absolute -top-2 -right-2 text-[9px] bg-black text-red-400 rounded-full px-1.5 py-0.5 font-bold';
-          curse.innerText = 'PIFIA';
-          diceDiv.appendChild(curse);
-        } else if (val >= difficulty) {
-          diceDiv.className += ' bg-amber-900/70 border-2 border-amber-500 text-amber-200';
-          if (val === 10) {
-            const extra = document.createElement('span');
-            extra.className = 'absolute -bottom-2 -right-2 text-[8px] bg-red-900 text-white rounded-full px-1 font-mono';
-            extra.innerText = '🔥';
-            diceDiv.appendChild(extra);
-          }
-        } else {
-          diceDiv.className += ' bg-neutral-800 border border-neutral-600 text-gray-300';
-        }
-        diceDiv.innerText = val;
-        diceVisualContainer.appendChild(diceDiv);
+        diceDiv.className = 'dice-result relative w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm shadow-md fade-in';
+        if (val === 1) { diceDiv.className += ' bg-red-950 border border-red-600 text-red-300'; }
+        else if (val >= difficulty) { diceDiv.className += ' bg-amber-900/70 border border-amber-500 text-amber-200'; if(val===10){ let e=document.createElement('span');e.className='absolute -top-1 -right-1 text-[7px] bg-red-900 rounded-full px-1';e.innerText='🔥';diceDiv.appendChild(e);} }
+        else { diceDiv.className += ' bg-neutral-800 border border-neutral-600 text-gray-300'; }
+        diceDiv.innerText = val; diceVisualContainer.appendChild(diceDiv);
       });
-      
-      specialMsgSpan.innerHTML = message;
-      specialMsgSpan.className = `mt-3 text-xs font-semibold text-center uppercase tracking-wide ${isBotch ? 'text-red-400' : 'text-amber-300'}`;
+      specialMsgSpan.innerHTML = message; specialMsgSpan.className = `mt-2 text-[10px] font-semibold text-center uppercase tracking-wide ${isBotch ? 'text-red-400' : 'text-amber-300'}`;
     }
-    
-    // ==================== FUNCIONES DE SINCRONIZACIÓN DE DATOS DE JUGADORES ====================
     function loadPlayersFromFirebase() {
-      const playersRef = database.ref('players');
-      playersRef.on('value', (snapshot) => {
+      database.ref('players').on('value', (snapshot) => {
         const data = snapshot.val();
-        if (data) {
-          for (let player of ['german', 'carlos', 'ale', 'bruno']) {
-            if (data[player]) {
-              if (data[player].name) defaultPlayersData[player].name = data[player].name;
-              if (data[player].skillsData) {
-                defaultPlayersData[player].skillsData = { ...defaultPlayersData[player].skillsData, ...data[player].skillsData };
-              }
-              if (data[player].skillsCustomNames) {
-                if (!skillsCustomNames[player]) skillsCustomNames[player] = {};
-                skillsCustomNames[player] = { ...skillsCustomNames[player], ...data[player].skillsCustomNames };
-              }
-              if (data[player].skillsCustomDescs) {
-                if (!skillsCustomDescs[player]) skillsCustomDescs[player] = {};
-                skillsCustomDescs[player] = { ...skillsCustomDescs[player], ...data[player].skillsCustomDescs };
-              }
-            }
+        if (data) for (let player of ['german','carlos','ale','bruno']) {
+          if(data[player]){ if(data[player].name) defaultPlayersData[player].name=data[player].name;
+            if(data[player].skillsData) defaultPlayersData[player].skillsData={...defaultPlayersData[player].skillsData,...data[player].skillsData};
+            if(data[player].skillsCustomNames) { if(!skillsCustomNames[player]) skillsCustomNames[player]={}; skillsCustomNames[player]={...skillsCustomNames[player],...data[player].skillsCustomNames};}
+            if(data[player].skillsCustomDescs) { if(!skillsCustomDescs[player]) skillsCustomDescs[player]={}; skillsCustomDescs[player]={...skillsCustomDescs[player],...data[player].skillsCustomDescs};}
           }
         }
-        if (currentPlayer) {
-          renderSkillsForCurrentPlayer();
-          updatePlayerNameDisplay();
-        }
+        if(currentPlayer){ renderSkillsForCurrentPlayer(); updatePlayerNameDisplay(); }
       });
     }
+    function savePlayerToFirebase(playerId){ database.ref(`players/${playerId}`).set({ name:defaultPlayersData[playerId].name, skillsData:defaultPlayersData[playerId].skillsData, skillsCustomNames:skillsCustomNames[playerId]||{}, skillsCustomDescs:skillsCustomDescs[playerId]||{} }); }
+    function listenHistory() { database.ref('history').limitToLast(20).on('value',(snapshot)=>{ const data=snapshot.val(); if(data){ renderHistoryFromFirebase(Object.values(data).reverse()); } else document.getElementById('historyLog').innerHTML='<div class="text-gray-500 text-center text-[10px] italic">Sin tiradas aún</div>'; }); }
+    function saveRollToFirebase(rollData,playerId,diceUsed){ const playerName=defaultPlayersData[playerId]?.name||playerId.toUpperCase(); const rollEntry={ playerId,playerName, timestamp:new Date().toISOString(), timeFormatted:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}), diceCount:rollData.totalDiceThrown, difficulty:rollData.difficulty, successes:rollData.successes, isBotch:rollData.isBotch, results:rollData.results, message:rollData.message, resultsString:rollData.results.join(',') }; database.ref('history').push(rollEntry); saveLastRollToFirebase(rollData,playerId,playerName,diceUsed); }
+    function renderHistoryFromFirebase(historyArray){ const historyDiv=document.getElementById('historyLog'); if(!historyArray||historyArray.length===0){ historyDiv.innerHTML='<div class="text-gray-500 text-center text-[10px] italic">Sin tiradas aún</div>'; return; } historyDiv.innerHTML=historyArray.map(entry=>`<div class="border-b border-red-900/20 py-1 text-[10px] font-mono fade-in"><span class="text-amber-400">[${entry.timeFormatted}]</span> <span class="text-red-300 font-bold">${entry.playerName}</span> ${entry.diceCount}d10 (dif:${entry.difficulty}) → <span class="${entry.isBotch?'text-red-500':'text-green-400'}">${entry.isBotch?'💀PIFIA':entry.successes+' éxito'+(entry.successes!==1?'s':'')}</span></div>`).join(''); }
+    function clearGlobalHistory(){ if(confirm('⚠️ ¿Limpiar TODO el historial compartido?')) database.ref('history').remove(); }
+    function advancedVampireRoll(diceCount,difficulty){ let allRolls=[],successCount=0,ones=0,diceToRoll=diceCount; while(diceToRoll>0){ const roll=Math.floor(Math.random()*10)+1; allRolls.push(roll); if(roll>=difficulty) successCount++; if(roll===1) ones++; if(roll===10) diceToRoll++; diceToRoll--; } let finalSuccess=successCount-ones; let isBotch=false; if(ones>0&&finalSuccess<=0){ isBotch=true; finalSuccess=0;} else if(finalSuccess<0) finalSuccess=0; let specialMsg=''; if(isBotch) specialMsg='💀 ¡PIFIA! Algo terrible sucede... 💀'; else if(finalSuccess>=5) specialMsg='🌟 ¡ÉXITO ÉPICO! 🌟'; else if(finalSuccess>=3) specialMsg='✨ ¡Éxito completo! ✨'; else if(finalSuccess>=1) specialMsg='✔️ Éxito.'; else specialMsg='❌ Fracaso.'; return { results:allRolls, successes:finalSuccess, isBotch, message:specialMsg, totalDiceThrown:allRolls.length, difficulty }; }
+    function showRollingAnimation(durationMs,finalCallback){ diceVisualContainer.innerHTML=''; for(let i=0;i<Math.min(pendingDiceCount+2,8);i++){ const animDice=document.createElement('div'); animDice.className='w-9 h-9 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 border border-red-700/60 flex items-center justify-center rolling-dice shadow'; const qMark=document.createElement('span'); qMark.className='text-base font-black text-red-400/80'; qMark.innerText='?'; animDice.appendChild(qMark); diceVisualContainer.appendChild(animDice); } successDisplay.innerText='🎲'; specialMsgSpan.innerHTML='<span class="rolling-placeholder text-[9px]">⚙️ Dados rodando...</span>'; rollBtn.disabled=true; rollBtn.style.opacity='0.6'; setTimeout(()=>{ finalCallback(); rollBtn.disabled=false; rollBtn.style.opacity='1'; },durationMs); }
+    function performRollWithAnimation(diceOverride=null){ if(isRolling) return; isRolling=true; let diceToUse=(diceOverride!==null)?diceOverride:(currentSkillDice!==null?currentSkillDice:pendingDiceCount); if(diceToUse<1) diceToUse=1; const diff=currentDifficulty; const activePlayer=currentPlayer; showRollingAnimation(700,()=>{ const rollResult=advancedVampireRoll(diceToUse,diff); const playerName=defaultPlayersData[activePlayer]?.name||activePlayer.toUpperCase(); displayFinalRollFromFirebase({...rollResult,playerName}); saveRollToFirebase(rollResult,activePlayer,diceToUse); isRolling=false; rollBtn.classList.add('roll-btn-active'); setTimeout(()=>rollBtn.classList.remove('roll-btn-active'),400); currentSkillDice=null; customDiceIndicator.innerText=`${pendingDiceCount} dados`; }); }
     
-    function savePlayerToFirebase(playerId) {
-      const playerRef = database.ref(`players/${playerId}`);
-      const toSave = {
-        name: defaultPlayersData[playerId].name,
-        skillsData: defaultPlayersData[playerId].skillsData,
-        skillsCustomNames: skillsCustomNames[playerId] || {},
-        skillsCustomDescs: skillsCustomDescs[playerId] || {}
-      };
-      playerRef.set(toSave);
-    }
-    
-    function listenHistory() {
-      const historyRef = database.ref('history');
-      historyRef.limitToLast(20).on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const historyArray = Object.values(data).reverse();
-          renderHistoryFromFirebase(historyArray);
-        } else {
-          document.getElementById('historyLog').innerHTML = '<div class="text-gray-500 text-center text-xs italic">Sin tiradas aún. ¡Sé el primero!</div>';
-        }
-      });
-    }
-    
-    function saveRollToFirebase(rollData, playerId, diceUsed) {
-      const playerName = defaultPlayersData[playerId]?.name || playerId.toUpperCase();
-      const rollEntry = {
-        playerId: playerId,
-        playerName: playerName,
-        timestamp: new Date().toISOString(),
-        timeFormatted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        diceCount: rollData.totalDiceThrown,
-        difficulty: rollData.difficulty,
-        successes: rollData.successes,
-        isBotch: rollData.isBotch,
-        results: rollData.results,
-        message: rollData.message,
-        resultsString: rollData.results.join(', ')
-      };
-      database.ref('history').push(rollEntry);
-      
-      // Guardar también la última tirada para visualización en tiempo real
-      saveLastRollToFirebase(rollData, playerId, playerName, diceUsed);
-    }
-    
-    function renderHistoryFromFirebase(historyArray) {
-      const historyDiv = document.getElementById('historyLog');
-      if (!historyArray || historyArray.length === 0) {
-        historyDiv.innerHTML = '<div class="text-gray-500 text-center text-xs italic">Sin tiradas aún. ¡Sé el primero!</div>';
-        return;
-      }
-      historyDiv.innerHTML = historyArray.map(entry => {
-        const botchText = entry.isBotch ? '💀 ¡PIFIA! 💀' : `${entry.successes} éxito${entry.successes !== 1 ? 's' : ''}`;
-        const resultsText = entry.resultsString ? ` [${entry.resultsString}]` : '';
-        return `<div class="border-b border-red-900/20 py-2 text-xs font-mono fade-in">
-          <span class="text-amber-400">[${entry.timeFormatted}]</span> 
-          <span class="text-red-300 font-bold">${entry.playerName}</span> 
-          lanzó ${entry.diceCount}d10 (dif:${entry.difficulty})${resultsText} → 
-          <span class="${entry.isBotch ? 'text-red-500' : 'text-green-400'}">${botchText}</span>
-        </div>`;
-      }).join('');
-    }
-    
-    function clearGlobalHistory() {
-      if (confirm('⚠️ ¿Limpiar TODO el historial compartido? Esta acción afecta a todos los jugadores.')) {
-        database.ref('history').remove();
-      }
-    }
-    
-    // ==================== LÓGICA DE DADOS ====================
-    function advancedVampireRoll(diceCount, difficulty) {
-      let allRolls = [];
-      let successCount = 0;
-      let ones = 0;
-      let diceToRoll = diceCount;
-      
-      while (diceToRoll > 0) {
-        const roll = Math.floor(Math.random() * 10) + 1;
-        allRolls.push(roll);
-        if (roll >= difficulty) successCount++;
-        if (roll === 1) ones++;
-        if (roll === 10) diceToRoll++;
-        diceToRoll--;
-      }
-      
-      let finalSuccess = successCount - ones;
-      let isBotch = false;
-      if (ones > 0 && finalSuccess <= 0) {
-        isBotch = true;
-        finalSuccess = 0;
-      } else if (finalSuccess < 0) {
-        finalSuccess = 0;
-      }
-      
-      let specialMsg = '';
-      if (isBotch) specialMsg = '💀 ¡PIFIA! Algo terrible sucede... la Bestia se agita. 💀';
-      else if (finalSuccess >= 5) specialMsg = '🌟 ¡ÉXITO ÉPICO! La sangre canta con poder. 🌟';
-      else if (finalSuccess >= 3) specialMsg = '✨ ¡Éxito completo! Logras tu cometido con estilo. ✨';
-      else if (finalSuccess >= 1) specialMsg = '✔️ Éxito. La suerte te favorece.';
-      else specialMsg = '❌ Fracaso. El azar te da la espalda esta vez.';
-      
-      return { results: allRolls, successes: finalSuccess, isBotch, message: specialMsg, totalDiceThrown: allRolls.length, difficulty };
-    }
-    
-    function showRollingAnimation(durationMs, finalCallback) {
-      diceVisualContainer.innerHTML = '';
-      const placeholderCount = Math.min(pendingDiceCount + 2, 12);
-      for (let i = 0; i < placeholderCount; i++) {
-        const animDice = document.createElement('div');
-        animDice.className = 'w-12 h-12 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-red-700/60 flex items-center justify-center rolling-dice shadow-xl';
-        const qMark = document.createElement('span');
-        qMark.className = 'text-2xl font-black text-red-400/80';
-        qMark.innerText = '?';
-        animDice.appendChild(qMark);
-        diceVisualContainer.appendChild(animDice);
-      }
-      successDisplay.innerText = '🎲';
-      specialMsgSpan.innerHTML = '<span class="rolling-placeholder">⚙️ Los dados ruedan en la penumbra... ⚙️</span>';
-      specialMsgSpan.className = 'mt-3 text-xs font-semibold text-center uppercase tracking-wide text-amber-400/80';
-      rollBtn.disabled = true;
-      rollBtn.style.opacity = '0.6';
-      setTimeout(() => {
-        finalCallback();
-        rollBtn.disabled = false;
-        rollBtn.style.opacity = '1';
-      }, durationMs);
-    }
-    
-    function performRollWithAnimation(diceOverride = null) {
-      if (isRolling) return;
-      isRolling = true;
-      let diceToUse = (diceOverride !== null) ? diceOverride : (currentSkillDice !== null ? currentSkillDice : pendingDiceCount);
-      if (diceToUse < 1) diceToUse = 1;
-      const diff = currentDifficulty;
-      const activePlayer = currentPlayer;
-      
-      showRollingAnimation(900, () => {
-        const rollResult = advancedVampireRoll(diceToUse, diff);
-        // Mostrar localmente inmediatamente
-        const playerName = defaultPlayersData[activePlayer]?.name || activePlayer.toUpperCase();
-        const displayData = { ...rollResult, playerName: playerName };
-        displayFinalRollFromFirebase(displayData);
-        // Guardar en Firebase para sincronizar con otros jugadores
-        saveRollToFirebase(rollResult, activePlayer, diceToUse);
-        isRolling = false;
-        rollBtn.classList.add('roll-btn-active');
-        setTimeout(() => rollBtn.classList.remove('roll-btn-active'), 400);
-        currentSkillDice = null;
-        customDiceIndicator.innerText = `${pendingDiceCount} dados (manual)`;
-      });
-    }
-    
-    // ==================== UI RENDER ====================
-    function getSkillDisplayName(playerId, skillId) {
-      if (skillsCustomNames[playerId] && skillsCustomNames[playerId][skillId]) {
-        return skillsCustomNames[playerId][skillId];
-      }
-      const defaultSkill = defaultSkills.find(s => s.id === skillId);
-      return defaultSkill ? defaultSkill.name : skillId;
-    }
-    
-    function getSkillDisplayDesc(playerId, skillId) {
-      if (skillsCustomDescs[playerId] && skillsCustomDescs[playerId][skillId]) {
-        return skillsCustomDescs[playerId][skillId];
-      }
-      const defaultSkill = defaultSkills.find(s => s.id === skillId);
-      return defaultSkill ? defaultSkill.desc : "";
-    }
-    
-    function renderSkillsForCurrentPlayer() {
-      const player = defaultPlayersData[currentPlayer];
-      if (!player) return;
-      
-      skillsContainer.innerHTML = '';
-      defaultSkills.forEach(skill => {
-        const skillValue = player.skillsData[skill.id];
-        const displayName = getSkillDisplayName(currentPlayer, skill.id);
-        const displayDesc = getSkillDisplayDesc(currentPlayer, skill.id);
-        
-        const card = document.createElement('div');
-        card.className = 'skill-card bg-neutral-800/60 border-l-4 border-red-700/60 rounded-xl p-3 hover:bg-neutral-800/80 transition';
-        
-        const topRow = document.createElement('div');
-        topRow.className = 'flex flex-wrap items-center gap-2 mb-2';
-        
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'font-bold text-sm text-amber-300 cursor-pointer hover:bg-red-900/30 px-1 rounded';
-        nameSpan.innerText = displayName;
-        
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.value = displayName;
-        nameInput.className = 'editable-name text-xs';
-        nameInput.style.display = 'none';
-        
-        const descSpan = document.createElement('span');
-        descSpan.className = 'text-[10px] text-gray-400 cursor-pointer hover:bg-red-900/30 px-1 rounded';
-        descSpan.innerText = displayDesc;
-        
-        const descInput = document.createElement('input');
-        descInput.type = 'text';
-        descInput.value = displayDesc;
-        descInput.className = 'editable-desc text-[10px]';
-        descInput.style.display = 'none';
-        
-        const editNameBtn = document.createElement('button');
-        editNameBtn.className = 'edit-icon-btn';
-        editNameBtn.innerHTML = '✎ nom';
-        const editDescBtn = document.createElement('button');
-        editDescBtn.className = 'edit-icon-btn';
-        editDescBtn.innerHTML = '✎ desc';
-        
-        let editingName = false;
-        editNameBtn.addEventListener('click', () => {
-          if (!editingName) {
-            nameSpan.style.display = 'none';
-            nameInput.style.display = 'inline-block';
-            nameInput.focus();
-            editingName = true;
-            editNameBtn.innerHTML = '💾';
-          } else {
-            const newName = nameInput.value.trim();
-            if (newName) {
-              if (!skillsCustomNames[currentPlayer]) skillsCustomNames[currentPlayer] = {};
-              skillsCustomNames[currentPlayer][skill.id] = newName;
-              nameSpan.innerText = newName;
-              savePlayerToFirebase(currentPlayer);
-            }
-            nameSpan.style.display = 'inline-block';
-            nameInput.style.display = 'none';
-            editingName = false;
-            editNameBtn.innerHTML = '✎ nom';
-          }
-        });
-        
-        let editingDesc = false;
-        editDescBtn.addEventListener('click', () => {
-          if (!editingDesc) {
-            descSpan.style.display = 'none';
-            descInput.style.display = 'inline-block';
-            descInput.focus();
-            editingDesc = true;
-            editDescBtn.innerHTML = '💾';
-          } else {
-            const newDesc = descInput.value.trim();
-            if (newDesc) {
-              if (!skillsCustomDescs[currentPlayer]) skillsCustomDescs[currentPlayer] = {};
-              skillsCustomDescs[currentPlayer][skill.id] = newDesc;
-              descSpan.innerText = newDesc;
-              savePlayerToFirebase(currentPlayer);
-            }
-            descSpan.style.display = 'inline-block';
-            descInput.style.display = 'none';
-            editingDesc = false;
-            editDescBtn.innerHTML = '✎ desc';
-          }
-        });
-        
-        nameInput.addEventListener('blur', () => {
-          if (editingName) {
-            const newName = nameInput.value.trim();
-            if (newName) {
-              if (!skillsCustomNames[currentPlayer]) skillsCustomNames[currentPlayer] = {};
-              skillsCustomNames[currentPlayer][skill.id] = newName;
-              nameSpan.innerText = newName;
-              savePlayerToFirebase(currentPlayer);
-            }
-            nameSpan.style.display = 'inline-block';
-            nameInput.style.display = 'none';
-            editingName = false;
-            editNameBtn.innerHTML = '✎ nom';
-          }
-        });
-        
-        descInput.addEventListener('blur', () => {
-          if (editingDesc) {
-            const newDesc = descInput.value.trim();
-            if (newDesc) {
-              if (!skillsCustomDescs[currentPlayer]) skillsCustomDescs[currentPlayer] = {};
-              skillsCustomDescs[currentPlayer][skill.id] = newDesc;
-              descSpan.innerText = newDesc;
-              savePlayerToFirebase(currentPlayer);
-            }
-            descSpan.style.display = 'inline-block';
-            descInput.style.display = 'none';
-            editingDesc = false;
-            editDescBtn.innerHTML = '✎ desc';
-          }
-        });
-        
-        topRow.appendChild(nameSpan);
-        topRow.appendChild(nameInput);
-        topRow.appendChild(editNameBtn);
-        topRow.appendChild(descSpan);
-        topRow.appendChild(descInput);
-        topRow.appendChild(editDescBtn);
-        
-        const bottomRow = document.createElement('div');
-        bottomRow.className = 'flex items-center justify-between mt-2';
-        
-        const diceControls = document.createElement('div');
-        diceControls.className = 'flex items-center gap-2';
-        
-        const diceSpan = document.createElement('span');
-        diceSpan.className = 'bg-black/60 text-red-300 font-mono font-bold text-lg px-3 py-1 rounded-lg border border-red-800';
-        diceSpan.innerText = skillValue;
-        
-        const editDiceInput = document.createElement('input');
-        editDiceInput.type = 'number';
-        editDiceInput.min = '1';
-        editDiceInput.max = '20';
-        editDiceInput.value = skillValue;
-        editDiceInput.className = 'editable-pool';
-        editDiceInput.style.display = 'none';
-        
-        const editDiceBtn = document.createElement('button');
-        editDiceBtn.className = 'edit-icon-btn';
-        editDiceBtn.innerHTML = '✎ dados';
-        
-        const rollSkillBtn = document.createElement('button');
-        rollSkillBtn.className = 'bg-red-900/60 hover:bg-red-800 text-white text-sm px-4 py-1.5 rounded-full flex items-center gap-1';
-        rollSkillBtn.innerHTML = '🎲 Tirar';
-        
-        let editingDice = false;
-        editDiceBtn.addEventListener('click', () => {
-          if (!editingDice) {
-            diceSpan.style.display = 'none';
-            editDiceInput.style.display = 'inline-block';
-            editDiceInput.focus();
-            editingDice = true;
-            editDiceBtn.innerHTML = '💾';
-          } else {
-            const newVal = parseInt(editDiceInput.value, 10);
-            if (!isNaN(newVal) && newVal >= 1 && newVal <= 25) {
-              defaultPlayersData[currentPlayer].skillsData[skill.id] = newVal;
-              diceSpan.innerText = newVal;
-              savePlayerToFirebase(currentPlayer);
-            }
-            diceSpan.style.display = 'inline-block';
-            editDiceInput.style.display = 'none';
-            editingDice = false;
-            editDiceBtn.innerHTML = '✎ dados';
-          }
-        });
-        
-        editDiceInput.addEventListener('blur', () => {
-          if (editingDice) {
-            const newVal = parseInt(editDiceInput.value, 10);
-            if (!isNaN(newVal) && newVal >= 1 && newVal <= 25) {
-              defaultPlayersData[currentPlayer].skillsData[skill.id] = newVal;
-              diceSpan.innerText = newVal;
-              savePlayerToFirebase(currentPlayer);
-            }
-            diceSpan.style.display = 'inline-block';
-            editDiceInput.style.display = 'none';
-            editingDice = false;
-            editDiceBtn.innerHTML = '✎ dados';
-          }
-        });
-        
-        rollSkillBtn.addEventListener('click', () => {
-          const diceToUse = defaultPlayersData[currentPlayer].skillsData[skill.id];
-          currentSkillDice = diceToUse;
-          customDiceSlider.value = diceToUse;
-          customDiceIndicator.innerText = `${diceToUse} dados (habilidad)`;
-          performRollWithAnimation(diceToUse);
-        });
-        
-        diceControls.appendChild(diceSpan);
-        diceControls.appendChild(editDiceInput);
-        diceControls.appendChild(editDiceBtn);
-        diceControls.appendChild(rollSkillBtn);
-        bottomRow.appendChild(diceControls);
-        
-        card.appendChild(topRow);
-        card.appendChild(bottomRow);
+    // RENDER HABILIDADES EN GRID 3 COLUMNAS
+    function renderSkillsForCurrentPlayer(){
+      const player=defaultPlayersData[currentPlayer]; if(!player) return;
+      skillsContainer.innerHTML='';
+      defaultSkills.forEach(skill=>{
+        const skillValue=player.skillsData[skill.id];
+        let displayName=(skillsCustomNames[currentPlayer]?.[skill.id]) || skill.name;
+        let displayDesc=(skillsCustomDescs[currentPlayer]?.[skill.id]) || skill.desc;
+        const card=document.createElement('div'); card.className='skill-card-mobile';
+        const nameDiv=document.createElement('div'); nameDiv.className='skill-name-mobile'; nameDiv.innerText=displayName;
+        const descDiv=document.createElement('div'); descDiv.className='skill-desc-mobile'; descDiv.innerText=displayDesc;
+        const diceArea=document.createElement('div'); diceArea.className='skill-dice-area';
+        const diceValSpan=document.createElement('span'); diceValSpan.className='skill-dice-value'; diceValSpan.innerText=skillValue;
+        const rollBtnSkill=document.createElement('button'); rollBtnSkill.className='skill-roll-btn'; rollBtnSkill.innerHTML='🎲 TIRAR';
+        rollBtnSkill.addEventListener('click',()=>{ currentSkillDice=skillValue; customDiceSlider.value=skillValue; customDiceIndicator.innerText=`${skillValue} dados (hab)`; performRollWithAnimation(skillValue); });
+        diceArea.appendChild(diceValSpan); diceArea.appendChild(rollBtnSkill);
+        const editRow=document.createElement('div'); editRow.className='skill-edit-row';
+        const editNameBtn=document.createElement('button'); editNameBtn.className='edit-icon-micro'; editNameBtn.innerText='✎ nom';
+        const editDescBtn=document.createElement('button'); editDescBtn.className='edit-icon-micro'; editDescBtn.innerText='✎ desc';
+        const editDiceBtn=document.createElement('button'); editDiceBtn.className='edit-icon-micro'; editDiceBtn.innerText='✎ dados';
+        let nameInput=null, descInput=null, diceInput=null;
+        editNameBtn.addEventListener('click',()=>{ let newName=prompt('Editar nombre habilidad:',displayName); if(newName && newName.trim()){ if(!skillsCustomNames[currentPlayer]) skillsCustomNames[currentPlayer]={}; skillsCustomNames[currentPlayer][skill.id]=newName.trim(); nameDiv.innerText=newName.trim(); savePlayerToFirebase(currentPlayer); } });
+        editDescBtn.addEventListener('click',()=>{ let newDesc=prompt('Editar descripción:',displayDesc); if(newDesc && newDesc.trim()){ if(!skillsCustomDescs[currentPlayer]) skillsCustomDescs[currentPlayer]={}; skillsCustomDescs[currentPlayer][skill.id]=newDesc.trim(); descDiv.innerText=newDesc.trim(); savePlayerToFirebase(currentPlayer); } });
+        editDiceBtn.addEventListener('click',()=>{ let newDice=prompt('Editar dados de habilidad (1-20):',skillValue); let val=parseInt(newDice,10); if(!isNaN(val) && val>=1 && val<=20){ defaultPlayersData[currentPlayer].skillsData[skill.id]=val; diceValSpan.innerText=val; savePlayerToFirebase(currentPlayer); } });
+        editRow.appendChild(editNameBtn); editRow.appendChild(editDescBtn); editRow.appendChild(editDiceBtn);
+        card.appendChild(nameDiv); card.appendChild(descDiv); card.appendChild(diceArea); card.appendChild(editRow);
         skillsContainer.appendChild(card);
       });
     }
-    
-    function updatePlayerNameDisplay() {
-      const player = defaultPlayersData[currentPlayer];
-      if (player) {
-        playerNameDisplay.innerText = player.name;
-        currentPlayerBadge.innerHTML = `🎭 ${player.name}`;
-      }
-    }
-    
-    function switchPlayer(playerId) {
-      currentPlayer = playerId;
-      updatePlayerNameDisplay();
-      renderSkillsForCurrentPlayer();
-      currentSkillDice = null;
-      customDiceIndicator.innerText = `${pendingDiceCount} dados (manual)`;
-      
-      document.querySelectorAll('.tab-player').forEach(btn => {
-        if (btn.getAttribute('data-player') === playerId) {
-          btn.classList.add('tab-active');
-          btn.classList.remove('tab-inactive');
-        } else {
-          btn.classList.add('tab-inactive');
-          btn.classList.remove('tab-active');
-        }
-      });
-    }
-    
-    function updateDifficulty() {
-      currentDifficulty = parseInt(difficultySlider.value, 10);
-      difficultyValueSpan.innerText = currentDifficulty;
-    }
-    
-    function updateCustomDice() {
-      pendingDiceCount = parseInt(customDiceSlider.value, 10);
-      customDiceIndicator.innerText = `${pendingDiceCount} dados (manual)`;
-      currentSkillDice = null;
-    }
-    
-    playerNameDisplay.addEventListener('blur', function() {
-      let newName = this.innerText.trim().toUpperCase();
-      if (newName === "") newName = defaultPlayersData[currentPlayer].name;
-      defaultPlayersData[currentPlayer].name = newName;
-      this.innerText = newName;
-      currentPlayerBadge.innerHTML = `🎭 ${newName}`;
-      savePlayerToFirebase(currentPlayer);
-      renderSkillsForCurrentPlayer();
-    });
-    
-    customDiceSlider.addEventListener('input', updateCustomDice);
-    difficultySlider.addEventListener('input', updateDifficulty);
-    rollBtn.addEventListener('click', () => performRollWithAnimation(null));
-    clearHistoryBtn.addEventListener('click', clearGlobalHistory);
-    
-    document.querySelectorAll('.tab-player').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const playerId = btn.getAttribute('data-player');
-        if (playerId) switchPlayer(playerId);
-      });
-    });
-    
-    console.log("Iniciando Cicatrices del Umbral con Firebase...");
-    updateDifficulty();
-    updateCustomDice();
-    switchPlayer('german');
-    loadPlayersFromFirebase();
-    listenHistory();
-    listenLastRoll(); // Escuchar la última tirada en tiempo real
-    
-    diceVisualContainer.innerHTML = '<div class="text-sm text-gray-400 italic w-full text-center">✅ Conectado. ¡Listos para jugar!</div>';
+    function updatePlayerNameDisplay(){ const p=defaultPlayersData[currentPlayer]; if(p){ playerNameDisplay.innerText=p.name; currentPlayerBadge.innerHTML=`🎭 ${p.name}`; } }
+    function switchPlayer(playerId){ currentPlayer=playerId; updatePlayerNameDisplay(); renderSkillsForCurrentPlayer(); currentSkillDice=null; customDiceIndicator.innerText=`${pendingDiceCount} dados`; document.querySelectorAll('.tab-player').forEach(btn=>{ if(btn.getAttribute('data-player')===playerId){ btn.classList.add('tab-active'); btn.classList.remove('tab-inactive'); } else{ btn.classList.add('tab-inactive'); btn.classList.remove('tab-active'); } }); }
+    function updateDifficulty(){ currentDifficulty=parseInt(difficultySlider.value,10); difficultyValueSpan.innerText=currentDifficulty; }
+    function updateCustomDice(){ pendingDiceCount=parseInt(customDiceSlider.value,10); customDiceIndicator.innerText=`${pendingDiceCount} dados`; currentSkillDice=null; }
+    playerNameDisplay.addEventListener('blur',function(){ let newName=this.innerText.trim().toUpperCase(); if(newName==="") newName=defaultPlayersData[currentPlayer].name; defaultPlayersData[currentPlayer].name=newName; this.innerText=newName; currentPlayerBadge.innerHTML=`🎭 ${newName}`; savePlayerToFirebase(currentPlayer); renderSkillsForCurrentPlayer(); });
+    customDiceSlider.addEventListener('input',updateCustomDice); difficultySlider.addEventListener('input',updateDifficulty); rollBtn.addEventListener('click',()=>performRollWithAnimation(null)); clearHistoryBtn.addEventListener('click',clearGlobalHistory);
+    document.querySelectorAll('.tab-player').forEach(btn=>{ btn.addEventListener('click',()=>{ const pid=btn.getAttribute('data-player'); if(pid) switchPlayer(pid); }); });
+    updateDifficulty(); updateCustomDice(); switchPlayer('german'); loadPlayersFromFirebase(); listenHistory(); listenLastRoll();
+    diceVisualContainer.innerHTML='<div class="text-[10px] text-gray-400 italic w-full text-center">✅ Conectado</div>';
   </script>
 </body>
 </html>
