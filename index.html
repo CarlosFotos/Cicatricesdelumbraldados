@@ -14,7 +14,7 @@
     * { 
       user-select: none; 
       -webkit-tap-highlight-color: transparent;
-      touch-action: pan-x pan-y; /* Evita zoom deforme en elementos interactivos */
+      touch-action: pan-x pan-y;
     }
     body {
       background: #0b0a0a;
@@ -78,7 +78,6 @@
     }
     .tab-inactive:hover { background: #2d2422; color: #f3b37c; }
     
-    /* SKILL CARDS - DISEÑO COMPACTO MÓVIL 3 COLUMNAS */
     .skills-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
@@ -221,7 +220,6 @@
     }
     .fade-in { animation: fadeIn 0.3s ease-out; }
     
-    /* Ajustes para sliders y controles */
     input[type="range"] {
       touch-action: pan-x pinch-zoom;
     }
@@ -231,6 +229,21 @@
     }
     button, .skill-card-mobile, .tab-player, .player-name-edit {
       touch-action: manipulation;
+    }
+    /* Estilo para los resultados de dados en el historial */
+    .history-dice-results {
+      font-family: monospace;
+      font-size: 9px;
+      color: #b45353;
+      background: rgba(0,0,0,0.4);
+      padding: 2px 6px;
+      border-radius: 12px;
+      display: inline-block;
+      margin-top: 2px;
+    }
+    .history-entry {
+      border-bottom: 1px solid rgba(180, 70, 60, 0.2);
+      padding: 6px 4px;
     }
   </style>
 </head>
@@ -313,7 +326,7 @@
       </div>
     </div>
 
-    <!-- BOTONES DE HABILIDADES EN GRID 3 COLUMNAS (MÓVIL PERFECTO) -->
+    <!-- BOTONES DE HABILIDADES EN GRID 3 COLUMNAS -->
     <div class="bg-gradient-to-br from-neutral-900/80 to-neutral-950/90 rounded-2xl border border-red-800/30 p-3 mb-4">
       <div class="flex justify-between items-center border-b border-red-900/30 pb-1 mb-2">
         <span class="font-bold text-red-300 text-[11px] uppercase tracking-wider">⚔️ HABILIDADES</span>
@@ -325,7 +338,7 @@
       </div>
     </div>
     
-    <!-- HISTORIAL SINCRONIZADO -->
+    <!-- HISTORIAL SINCRONIZADO CON RESULTADOS DE DADOS -->
     <div class="bg-black/30 rounded-2xl border border-red-900/30 p-3">
       <div class="flex items-center gap-1 mb-2">
         <span class="text-xs">📜</span>
@@ -345,7 +358,7 @@
   </nav>
 
   <script>
-    // ==================== CONFIGURACIÓN DE FIREBASE (IDÉNTICA) ====================
+    // ==================== CONFIGURACIÓN DE FIREBASE ====================
     const firebaseConfig = {
       apiKey: "AIzaSyAlQc8xaiy0E6DbiTUOi40zPDyRsyBBXRo",
       authDomain: "cicatrices-del-umbral.firebaseapp.com",
@@ -398,13 +411,14 @@
     const playerNameDisplay = document.getElementById('playerNameDisplay');
     const currentPlayerBadge = document.getElementById('currentPlayerBadge');
     
-    // ==================== FUNCIONES FIREBASE (MISMA LÓGICA) ====================
+    // ==================== FUNCIONES FIREBASE ====================
     function listenLastRoll() {
       database.ref('lastRoll').on('value', (snapshot) => {
         const rollData = snapshot.val();
         if (rollData && rollData.results) displayFinalRollFromFirebase(rollData);
       });
     }
+    
     function saveLastRollToFirebase(rollData, playerId, playerName, diceUsed) {
       database.ref('lastRoll').set({
         playerId, playerName, timestamp: Date.now(), results: rollData.results,
@@ -412,6 +426,7 @@
         totalDiceThrown: rollData.totalDiceThrown, difficulty: rollData.difficulty, diceUsed
       });
     }
+    
     function displayFinalRollFromFirebase(rollData) {
       const { results, successes, isBotch, message, totalDiceThrown, difficulty, playerName } = rollData;
       if (isBotch) { successDisplay.innerText = '⚰️ PIFIA ⚰️'; successDisplay.classList.add('text-red-500'); }
@@ -429,6 +444,7 @@
       });
       specialMsgSpan.innerHTML = message; specialMsgSpan.className = `mt-2 text-[10px] font-semibold text-center uppercase tracking-wide ${isBotch ? 'text-red-400' : 'text-amber-300'}`;
     }
+    
     function loadPlayersFromFirebase() {
       database.ref('players').on('value', (snapshot) => {
         const data = snapshot.val();
@@ -442,14 +458,137 @@
         if(currentPlayer){ renderSkillsForCurrentPlayer(); updatePlayerNameDisplay(); }
       });
     }
+    
     function savePlayerToFirebase(playerId){ database.ref(`players/${playerId}`).set({ name:defaultPlayersData[playerId].name, skillsData:defaultPlayersData[playerId].skillsData, skillsCustomNames:skillsCustomNames[playerId]||{}, skillsCustomDescs:skillsCustomDescs[playerId]||{} }); }
-    function listenHistory() { database.ref('history').limitToLast(20).on('value',(snapshot)=>{ const data=snapshot.val(); if(data){ renderHistoryFromFirebase(Object.values(data).reverse()); } else document.getElementById('historyLog').innerHTML='<div class="text-gray-500 text-center text-[10px] italic">Sin tiradas aún</div>'; }); }
-    function saveRollToFirebase(rollData,playerId,diceUsed){ const playerName=defaultPlayersData[playerId]?.name||playerId.toUpperCase(); const rollEntry={ playerId,playerName, timestamp:new Date().toISOString(), timeFormatted:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}), diceCount:rollData.totalDiceThrown, difficulty:rollData.difficulty, successes:rollData.successes, isBotch:rollData.isBotch, results:rollData.results, message:rollData.message, resultsString:rollData.results.join(',') }; database.ref('history').push(rollEntry); saveLastRollToFirebase(rollData,playerId,playerName,diceUsed); }
-    function renderHistoryFromFirebase(historyArray){ const historyDiv=document.getElementById('historyLog'); if(!historyArray||historyArray.length===0){ historyDiv.innerHTML='<div class="text-gray-500 text-center text-[10px] italic">Sin tiradas aún</div>'; return; } historyDiv.innerHTML=historyArray.map(entry=>`<div class="border-b border-red-900/20 py-1 text-[10px] font-mono fade-in"><span class="text-amber-400">[${entry.timeFormatted}]</span> <span class="text-red-300 font-bold">${entry.playerName}</span> ${entry.diceCount}d10 (dif:${entry.difficulty}) → <span class="${entry.isBotch?'text-red-500':'text-green-400'}">${entry.isBotch?'💀PIFIA':entry.successes+' éxito'+(entry.successes!==1?'s':'')}</span></div>`).join(''); }
+    
+    function listenHistory() { 
+      database.ref('history').limitToLast(20).on('value',(snapshot)=>{ 
+        const data=snapshot.val(); 
+        if(data){ 
+          renderHistoryFromFirebase(Object.values(data).reverse()); 
+        } else { 
+          document.getElementById('historyLog').innerHTML='<div class="text-gray-500 text-center text-[10px] italic">Sin tiradas aún</div>'; 
+        } 
+      }); 
+    }
+    
+    function saveRollToFirebase(rollData, playerId, diceUsed) { 
+      const playerName = defaultPlayersData[playerId]?.name || playerId.toUpperCase(); 
+      // Guardamos también los resultados individuales para mostrarlos en el historial
+      const rollEntry = { 
+        playerId, 
+        playerName, 
+        timestamp: new Date().toISOString(), 
+        timeFormatted: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}), 
+        diceCount: rollData.totalDiceThrown, 
+        difficulty: rollData.difficulty, 
+        successes: rollData.successes, 
+        isBotch: rollData.isBotch, 
+        results: rollData.results,  // Guardamos el array completo de resultados
+        resultsString: rollData.results.join(', '),  // String formateado para mostrar
+        message: rollData.message 
+      }; 
+      database.ref('history').push(rollEntry); 
+      saveLastRollToFirebase(rollData, playerId, playerName, diceUsed); 
+    }
+    
+    function renderHistoryFromFirebase(historyArray) { 
+      const historyDiv = document.getElementById('historyLog'); 
+      if(!historyArray || historyArray.length === 0) { 
+        historyDiv.innerHTML = '<div class="text-gray-500 text-center text-[10px] italic">Sin tiradas aún</div>'; 
+        return; 
+      } 
+      historyDiv.innerHTML = historyArray.map(entry => {
+        // Crear la cadena de resultados con formato bonito
+        let resultadosStr = '';
+        if (entry.results && Array.isArray(entry.results)) {
+          resultadosStr = entry.results.join(', ');
+        } else if (entry.resultsString) {
+          resultadosStr = entry.resultsString;
+        }
+        
+        const resultadosHTML = resultadosStr ? `<div class="history-dice-results mt-1">🎲 ${resultadosStr}</div>` : '';
+        
+        return `<div class="history-entry fade-in">
+          <div class="flex flex-wrap items-center gap-1 justify-between">
+            <span class="text-amber-400 text-[10px] font-mono">[${entry.timeFormatted}]</span>
+            <span class="text-red-300 font-bold text-[11px]">${entry.playerName}</span>
+          </div>
+          <div class="text-[10px] text-gray-400 mt-0.5">
+            ${entry.diceCount}d10 (dif:${entry.difficulty})
+          </div>
+          ${resultadosHTML}
+          <div class="mt-0.5">
+            <span class="${entry.isBotch ? 'text-red-500 font-bold' : 'text-green-400'} text-[10px]">
+              ${entry.isBotch ? '💀 PIFIA 💀' : `✨ ${entry.successes} éxito${entry.successes !== 1 ? 's' : ''} ✨`}
+            </span>
+          </div>
+        </div>`;
+      }).join(''); 
+    }
+    
     function clearGlobalHistory(){ if(confirm('⚠️ ¿Limpiar TODO el historial compartido?')) database.ref('history').remove(); }
-    function advancedVampireRoll(diceCount,difficulty){ let allRolls=[],successCount=0,ones=0,diceToRoll=diceCount; while(diceToRoll>0){ const roll=Math.floor(Math.random()*10)+1; allRolls.push(roll); if(roll>=difficulty) successCount++; if(roll===1) ones++; if(roll===10) diceToRoll++; diceToRoll--; } let finalSuccess=successCount-ones; let isBotch=false; if(ones>0&&finalSuccess<=0){ isBotch=true; finalSuccess=0;} else if(finalSuccess<0) finalSuccess=0; let specialMsg=''; if(isBotch) specialMsg='💀 ¡PIFIA! Algo terrible sucede... 💀'; else if(finalSuccess>=5) specialMsg='🌟 ¡ÉXITO ÉPICO! 🌟'; else if(finalSuccess>=3) specialMsg='✨ ¡Éxito completo! ✨'; else if(finalSuccess>=1) specialMsg='✔️ Éxito.'; else specialMsg='❌ Fracaso.'; return { results:allRolls, successes:finalSuccess, isBotch, message:specialMsg, totalDiceThrown:allRolls.length, difficulty }; }
-    function showRollingAnimation(durationMs,finalCallback){ diceVisualContainer.innerHTML=''; for(let i=0;i<Math.min(pendingDiceCount+2,8);i++){ const animDice=document.createElement('div'); animDice.className='w-9 h-9 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 border border-red-700/60 flex items-center justify-center rolling-dice shadow'; const qMark=document.createElement('span'); qMark.className='text-base font-black text-red-400/80'; qMark.innerText='?'; animDice.appendChild(qMark); diceVisualContainer.appendChild(animDice); } successDisplay.innerText='🎲'; specialMsgSpan.innerHTML='<span class="rolling-placeholder text-[9px]">⚙️ Dados rodando...</span>'; rollBtn.disabled=true; rollBtn.style.opacity='0.6'; setTimeout(()=>{ finalCallback(); rollBtn.disabled=false; rollBtn.style.opacity='1'; },durationMs); }
-    function performRollWithAnimation(diceOverride=null){ if(isRolling) return; isRolling=true; let diceToUse=(diceOverride!==null)?diceOverride:(currentSkillDice!==null?currentSkillDice:pendingDiceCount); if(diceToUse<1) diceToUse=1; const diff=currentDifficulty; const activePlayer=currentPlayer; showRollingAnimation(700,()=>{ const rollResult=advancedVampireRoll(diceToUse,diff); const playerName=defaultPlayersData[activePlayer]?.name||activePlayer.toUpperCase(); displayFinalRollFromFirebase({...rollResult,playerName}); saveRollToFirebase(rollResult,activePlayer,diceToUse); isRolling=false; rollBtn.classList.add('roll-btn-active'); setTimeout(()=>rollBtn.classList.remove('roll-btn-active'),400); currentSkillDice=null; customDiceIndicator.innerText=`${pendingDiceCount} dados`; }); }
+    
+    function advancedVampireRoll(diceCount,difficulty){ 
+      let allRolls=[], successCount=0, ones=0, diceToRoll=diceCount; 
+      while(diceToRoll>0){ 
+        const roll=Math.floor(Math.random()*10)+1; 
+        allRolls.push(roll); 
+        if(roll>=difficulty) successCount++; 
+        if(roll===1) ones++; 
+        if(roll===10) diceToRoll++; 
+        diceToRoll--; 
+      } 
+      let finalSuccess=successCount-ones; 
+      let isBotch=false; 
+      if(ones>0 && finalSuccess<=0){ isBotch=true; finalSuccess=0;} 
+      else if(finalSuccess<0) finalSuccess=0; 
+      let specialMsg=''; 
+      if(isBotch) specialMsg='💀 ¡PIFIA! Algo terrible sucede... 💀'; 
+      else if(finalSuccess>=5) specialMsg='🌟 ¡ÉXITO ÉPICO! 🌟'; 
+      else if(finalSuccess>=3) specialMsg='✨ ¡Éxito completo! ✨'; 
+      else if(finalSuccess>=1) specialMsg='✔️ Éxito.'; 
+      else specialMsg='❌ Fracaso.'; 
+      return { results:allRolls, successes:finalSuccess, isBotch, message:specialMsg, totalDiceThrown:allRolls.length, difficulty }; 
+    }
+    
+    function showRollingAnimation(durationMs,finalCallback){ 
+      diceVisualContainer.innerHTML=''; 
+      for(let i=0;i<Math.min(pendingDiceCount+2,8);i++){ 
+        const animDice=document.createElement('div'); 
+        animDice.className='w-9 h-9 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 border border-red-700/60 flex items-center justify-center rolling-dice shadow'; 
+        const qMark=document.createElement('span'); 
+        qMark.className='text-base font-black text-red-400/80'; 
+        qMark.innerText='?'; 
+        animDice.appendChild(qMark); 
+        diceVisualContainer.appendChild(animDice); 
+      } 
+      successDisplay.innerText='🎲'; 
+      specialMsgSpan.innerHTML='<span class="rolling-placeholder text-[9px]">⚙️ Dados rodando...</span>'; 
+      rollBtn.disabled=true; 
+      rollBtn.style.opacity='0.6'; 
+      setTimeout(()=>{ finalCallback(); rollBtn.disabled=false; rollBtn.style.opacity='1'; },durationMs); 
+    }
+    
+    function performRollWithAnimation(diceOverride=null){ 
+      if(isRolling) return; 
+      isRolling=true; 
+      let diceToUse=(diceOverride!==null)?diceOverride:(currentSkillDice!==null?currentSkillDice:pendingDiceCount); 
+      if(diceToUse<1) diceToUse=1; 
+      const diff=currentDifficulty; 
+      const activePlayer=currentPlayer; 
+      showRollingAnimation(700,()=>{ 
+        const rollResult=advancedVampireRoll(diceToUse,diff); 
+        const playerName=defaultPlayersData[activePlayer]?.name||activePlayer.toUpperCase(); 
+        displayFinalRollFromFirebase({...rollResult,playerName}); 
+        saveRollToFirebase(rollResult,activePlayer,diceToUse); 
+        isRolling=false; 
+        rollBtn.classList.add('roll-btn-active'); 
+        setTimeout(()=>rollBtn.classList.remove('roll-btn-active'),400); 
+        currentSkillDice=null; 
+        customDiceIndicator.innerText=`${pendingDiceCount} dados`; 
+      }); 
+    }
     
     // RENDER HABILIDADES EN GRID 3 COLUMNAS
     function renderSkillsForCurrentPlayer(){
@@ -471,7 +610,6 @@
         const editNameBtn=document.createElement('button'); editNameBtn.className='edit-icon-micro'; editNameBtn.innerText='✎ nom';
         const editDescBtn=document.createElement('button'); editDescBtn.className='edit-icon-micro'; editDescBtn.innerText='✎ desc';
         const editDiceBtn=document.createElement('button'); editDiceBtn.className='edit-icon-micro'; editDiceBtn.innerText='✎ dados';
-        let nameInput=null, descInput=null, diceInput=null;
         editNameBtn.addEventListener('click',()=>{ let newName=prompt('Editar nombre habilidad:',displayName); if(newName && newName.trim()){ if(!skillsCustomNames[currentPlayer]) skillsCustomNames[currentPlayer]={}; skillsCustomNames[currentPlayer][skill.id]=newName.trim(); nameDiv.innerText=newName.trim(); savePlayerToFirebase(currentPlayer); } });
         editDescBtn.addEventListener('click',()=>{ let newDesc=prompt('Editar descripción:',displayDesc); if(newDesc && newDesc.trim()){ if(!skillsCustomDescs[currentPlayer]) skillsCustomDescs[currentPlayer]={}; skillsCustomDescs[currentPlayer][skill.id]=newDesc.trim(); descDiv.innerText=newDesc.trim(); savePlayerToFirebase(currentPlayer); } });
         editDiceBtn.addEventListener('click',()=>{ let newDice=prompt('Editar dados de habilidad (1-20):',skillValue); let val=parseInt(newDice,10); if(!isNaN(val) && val>=1 && val<=20){ defaultPlayersData[currentPlayer].skillsData[skill.id]=val; diceValSpan.innerText=val; savePlayerToFirebase(currentPlayer); } });
@@ -480,13 +618,18 @@
         skillsContainer.appendChild(card);
       });
     }
+    
     function updatePlayerNameDisplay(){ const p=defaultPlayersData[currentPlayer]; if(p){ playerNameDisplay.innerText=p.name; currentPlayerBadge.innerHTML=`🎭 ${p.name}`; } }
+    
     function switchPlayer(playerId){ currentPlayer=playerId; updatePlayerNameDisplay(); renderSkillsForCurrentPlayer(); currentSkillDice=null; customDiceIndicator.innerText=`${pendingDiceCount} dados`; document.querySelectorAll('.tab-player').forEach(btn=>{ if(btn.getAttribute('data-player')===playerId){ btn.classList.add('tab-active'); btn.classList.remove('tab-inactive'); } else{ btn.classList.add('tab-inactive'); btn.classList.remove('tab-active'); } }); }
+    
     function updateDifficulty(){ currentDifficulty=parseInt(difficultySlider.value,10); difficultyValueSpan.innerText=currentDifficulty; }
     function updateCustomDice(){ pendingDiceCount=parseInt(customDiceSlider.value,10); customDiceIndicator.innerText=`${pendingDiceCount} dados`; currentSkillDice=null; }
+    
     playerNameDisplay.addEventListener('blur',function(){ let newName=this.innerText.trim().toUpperCase(); if(newName==="") newName=defaultPlayersData[currentPlayer].name; defaultPlayersData[currentPlayer].name=newName; this.innerText=newName; currentPlayerBadge.innerHTML=`🎭 ${newName}`; savePlayerToFirebase(currentPlayer); renderSkillsForCurrentPlayer(); });
     customDiceSlider.addEventListener('input',updateCustomDice); difficultySlider.addEventListener('input',updateDifficulty); rollBtn.addEventListener('click',()=>performRollWithAnimation(null)); clearHistoryBtn.addEventListener('click',clearGlobalHistory);
     document.querySelectorAll('.tab-player').forEach(btn=>{ btn.addEventListener('click',()=>{ const pid=btn.getAttribute('data-player'); if(pid) switchPlayer(pid); }); });
+    
     updateDifficulty(); updateCustomDice(); switchPlayer('german'); loadPlayersFromFirebase(); listenHistory(); listenLastRoll();
     diceVisualContainer.innerHTML='<div class="text-[10px] text-gray-400 italic w-full text-center">✅ Conectado</div>';
   </script>
