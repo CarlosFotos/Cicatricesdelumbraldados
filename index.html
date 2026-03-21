@@ -316,6 +316,7 @@
         <button data-player="carlos" class="tab-player px-3 py-1.5 rounded-t-lg font-bold text-[11px] transition-all tab-inactive">🗡️ CARLOS</button>
         <button data-player="ale" class="tab-player px-3 py-1.5 rounded-t-lg font-bold text-[11px] transition-all tab-inactive">🌙 ALE</button>
         <button data-player="bruno" class="tab-player px-3 py-1.5 rounded-t-lg font-bold text-[11px] transition-all tab-inactive">🏛️ BRUNO</button>
+        <button data-player="master" class="tab-player px-3 py-1.5 rounded-t-lg font-bold text-[11px] transition-all tab-inactive">👑 MASTER</button>
       </div>
       <div class="mt-1 flex justify-between items-center">
         <div class="flex items-center gap-1">
@@ -384,7 +385,8 @@
       german: { name: "GERMAN", skillsData: { perception: 4, alert: 5, combat: 6, persuasion: 7, stealth: 3, occult: 5 } },
       carlos: { name: "CARLOS", skillsData: { perception: 5, alert: 4, combat: 8, persuasion: 4, stealth: 5, occult: 3 } },
       ale: { name: "ALE", skillsData: { perception: 6, alert: 5, combat: 5, persuasion: 8, stealth: 4, occult: 6 } },
-      bruno: { name: "BRUNO", skillsData: { perception: 3, alert: 6, combat: 7, persuasion: 5, stealth: 6, occult: 4 } }
+      bruno: { name: "BRUNO", skillsData: { perception: 3, alert: 6, combat: 7, persuasion: 5, stealth: 6, occult: 4 } },
+      master: { name: "MASTER", skillsData: { perception: 8, alert: 8, combat: 8, persuasion: 8, stealth: 8, occult: 8 } }
     };
     
     let skillsCustomNames = {};
@@ -448,7 +450,7 @@
     function loadPlayersFromFirebase() {
       database.ref('players').on('value', (snapshot) => {
         const data = snapshot.val();
-        if (data) for (let player of ['german','carlos','ale','bruno']) {
+        if (data) for (let player of ['german','carlos','ale','bruno','master']) {
           if(data[player]){ if(data[player].name) defaultPlayersData[player].name=data[player].name;
             if(data[player].skillsData) defaultPlayersData[player].skillsData={...defaultPlayersData[player].skillsData,...data[player].skillsData};
             if(data[player].skillsCustomNames) { if(!skillsCustomNames[player]) skillsCustomNames[player]={}; skillsCustomNames[player]={...skillsCustomNames[player],...data[player].skillsCustomNames};}
