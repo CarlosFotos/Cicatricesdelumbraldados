@@ -230,20 +230,35 @@
     button, .skill-card-mobile, .tab-player, .player-name-edit {
       touch-action: manipulation;
     }
-    /* Estilo para los resultados de dados en el historial */
+    /* Estilo para los resultados de dados en el historial (más legible) */
     .history-dice-results {
       font-family: monospace;
-      font-size: 9px;
-      color: #b45353;
-      background: rgba(0,0,0,0.4);
-      padding: 2px 6px;
-      border-radius: 12px;
+      font-size: 10px;
+      color: #e07a5f;
+      background: rgba(0,0,0,0.6);
+      padding: 3px 8px;
+      border-radius: 16px;
       display: inline-block;
-      margin-top: 2px;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
     }
     .history-entry {
-      border-bottom: 1px solid rgba(180, 70, 60, 0.2);
-      padding: 6px 4px;
+      border-bottom: 1px solid rgba(180, 70, 60, 0.3);
+      padding: 8px 6px;
+      transition: background 0.1s;
+    }
+    .history-entry:hover {
+      background: rgba(180, 60, 50, 0.1);
+    }
+    /* Contenedor del historial más alto y mejor espaciado */
+    #historyLog {
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 4px;
+      font-size: 12px;
+    }
+    .history-entry .time-badge {
+      font-size: 9px;
     }
   </style>
 </head>
@@ -321,7 +336,7 @@
       <div class="mt-1 flex justify-between items-center">
         <div class="flex items-center gap-1">
           <span class="text-[8px] text-gray-400">Nombre:</span>
-          <span id="playerNameDisplay" class="player-name-edit inline-block text-xs" contenteditable="true">GERMAN</span>
+          <span id="playerNameDisplay" class="player-name-edit inline-block text-xs" contenteditable="true">MUSSAN JAHIN</span>
         </div>
         <div class="text-[7px] text-amber-700/60">✎ cloud</div>
       </div>
@@ -339,14 +354,14 @@
       </div>
     </div>
     
-    <!-- HISTORIAL SINCRONIZADO CON RESULTADOS DE DADOS -->
+    <!-- HISTORIAL SINCRONIZADO MÁS AMPLIO -->
     <div class="bg-black/30 rounded-2xl border border-red-900/30 p-3">
       <div class="flex items-center gap-1 mb-2">
         <span class="text-xs">📜</span>
-        <span class="font-bold text-[10px] uppercase tracking-wider text-red-300">Historial</span>
+        <span class="font-bold text-[11px] uppercase tracking-wider text-red-300">Historial de Tiradas</span>
         <button id="clearHistoryBtn" class="ml-auto text-[9px] bg-neutral-800 px-2 py-0.5 rounded-full text-gray-400 hover:text-red-300">Limpiar</button>
       </div>
-      <div id="historyLog" class="max-h-36 overflow-y-auto space-y-1 pr-1 text-[11px]">
+      <div id="historyLog" class="space-y-1 pr-1">
         <div class="text-gray-500 text-center text-[10px] italic">Cargando...</div>
       </div>
     </div>
@@ -381,11 +396,12 @@
       { id: "occult", name: "📜 OCULTISMO", desc: "Intel+Ocultismo" }
     ];
     
+    // Nombres actualizados según personajes
     const defaultPlayersData = {
-      german: { name: "GERMAN", skillsData: { perception: 4, alert: 5, combat: 6, persuasion: 7, stealth: 3, occult: 5 } },
-      carlos: { name: "CARLOS", skillsData: { perception: 5, alert: 4, combat: 8, persuasion: 4, stealth: 5, occult: 3 } },
-      ale: { name: "ALE", skillsData: { perception: 6, alert: 5, combat: 5, persuasion: 8, stealth: 4, occult: 6 } },
-      bruno: { name: "BRUNO", skillsData: { perception: 3, alert: 6, combat: 7, persuasion: 5, stealth: 6, occult: 4 } },
+      german: { name: "Mussan Jahin", skillsData: { perception: 4, alert: 5, combat: 6, persuasion: 7, stealth: 3, occult: 5 } },
+      carlos: { name: "Tuki Tun", skillsData: { perception: 5, alert: 4, combat: 8, persuasion: 4, stealth: 5, occult: 3 } },
+      ale: { name: "Jalen Clot", skillsData: { perception: 6, alert: 5, combat: 5, persuasion: 8, stealth: 4, occult: 6 } },
+      bruno: { name: "Tad Rien", skillsData: { perception: 3, alert: 6, combat: 7, persuasion: 5, stealth: 6, occult: 4 } },
       master: { name: "MASTER", skillsData: { perception: 8, alert: 8, combat: 8, persuasion: 8, stealth: 8, occult: 8 } }
     };
     
@@ -464,19 +480,18 @@
     function savePlayerToFirebase(playerId){ database.ref(`players/${playerId}`).set({ name:defaultPlayersData[playerId].name, skillsData:defaultPlayersData[playerId].skillsData, skillsCustomNames:skillsCustomNames[playerId]||{}, skillsCustomDescs:skillsCustomDescs[playerId]||{} }); }
     
     function listenHistory() { 
-      database.ref('history').limitToLast(20).on('value',(snapshot)=>{ 
+      database.ref('history').limitToLast(25).on('value',(snapshot)=>{ 
         const data=snapshot.val(); 
         if(data){ 
           renderHistoryFromFirebase(Object.values(data).reverse()); 
         } else { 
-          document.getElementById('historyLog').innerHTML='<div class="text-gray-500 text-center text-[10px] italic">Sin tiradas aún</div>'; 
+          document.getElementById('historyLog').innerHTML='<div class="text-gray-500 text-center text-[11px] italic">Sin tiradas aún</div>'; 
         } 
       }); 
     }
     
     function saveRollToFirebase(rollData, playerId, diceUsed) { 
       const playerName = defaultPlayersData[playerId]?.name || playerId.toUpperCase(); 
-      // Guardamos también los resultados individuales para mostrarlos en el historial
       const rollEntry = { 
         playerId, 
         playerName, 
@@ -486,8 +501,8 @@
         difficulty: rollData.difficulty, 
         successes: rollData.successes, 
         isBotch: rollData.isBotch, 
-        results: rollData.results,  // Guardamos el array completo de resultados
-        resultsString: rollData.results.join(', '),  // String formateado para mostrar
+        results: rollData.results,
+        resultsString: rollData.results.join(', '),
         message: rollData.message 
       }; 
       database.ref('history').push(rollEntry); 
@@ -497,31 +512,28 @@
     function renderHistoryFromFirebase(historyArray) { 
       const historyDiv = document.getElementById('historyLog'); 
       if(!historyArray || historyArray.length === 0) { 
-        historyDiv.innerHTML = '<div class="text-gray-500 text-center text-[10px] italic">Sin tiradas aún</div>'; 
+        historyDiv.innerHTML = '<div class="text-gray-500 text-center text-[11px] italic">Sin tiradas aún</div>'; 
         return; 
       } 
       historyDiv.innerHTML = historyArray.map(entry => {
-        // Crear la cadena de resultados con formato bonito
         let resultadosStr = '';
         if (entry.results && Array.isArray(entry.results)) {
           resultadosStr = entry.results.join(', ');
         } else if (entry.resultsString) {
           resultadosStr = entry.resultsString;
         }
-        
         const resultadosHTML = resultadosStr ? `<div class="history-dice-results mt-1">🎲 ${resultadosStr}</div>` : '';
-        
         return `<div class="history-entry fade-in">
-          <div class="flex flex-wrap items-center gap-1 justify-between">
-            <span class="text-amber-400 text-[10px] font-mono">[${entry.timeFormatted}]</span>
-            <span class="text-red-300 font-bold text-[11px]">${entry.playerName}</span>
+          <div class="flex flex-wrap items-center gap-2 justify-between">
+            <span class="text-amber-400 text-[9px] font-mono">[${entry.timeFormatted}]</span>
+            <span class="text-red-300 font-bold text-xs">${entry.playerName}</span>
           </div>
-          <div class="text-[10px] text-gray-400 mt-0.5">
+          <div class="text-[11px] text-gray-400 mt-1">
             ${entry.diceCount}d10 (dif:${entry.difficulty})
           </div>
           ${resultadosHTML}
-          <div class="mt-0.5">
-            <span class="${entry.isBotch ? 'text-red-500 font-bold' : 'text-green-400'} text-[10px]">
+          <div class="mt-1">
+            <span class="${entry.isBotch ? 'text-red-500 font-bold' : 'text-green-400'} text-[11px] font-semibold">
               ${entry.isBotch ? '💀 PIFIA 💀' : `✨ ${entry.successes} éxito${entry.successes !== 1 ? 's' : ''} ✨`}
             </span>
           </div>
@@ -531,6 +543,7 @@
     
     function clearGlobalHistory(){ if(confirm('⚠️ ¿Limpiar TODO el historial compartido?')) database.ref('history').remove(); }
     
+    // LÓGICA CORREGIDA: Pifia solo si NO hay éxitos Y hay al menos un 1
     function advancedVampireRoll(diceCount,difficulty){ 
       let allRolls=[], successCount=0, ones=0, diceToRoll=diceCount; 
       while(diceToRoll>0){ 
@@ -541,17 +554,27 @@
         if(roll===10) diceToRoll++; 
         diceToRoll--; 
       } 
-      let finalSuccess=successCount-ones; 
-      let isBotch=false; 
-      if(ones>0 && finalSuccess<=0){ isBotch=true; finalSuccess=0;} 
-      else if(finalSuccess<0) finalSuccess=0; 
-      let specialMsg=''; 
-      if(isBotch) specialMsg='💀 ¡PIFIA! Algo terrible sucede... 💀'; 
-      else if(finalSuccess>=5) specialMsg='🌟 ¡ÉXITO ÉPICO! 🌟'; 
-      else if(finalSuccess>=3) specialMsg='✨ ¡Éxito completo! ✨'; 
-      else if(finalSuccess>=1) specialMsg='✔️ Éxito.'; 
-      else specialMsg='❌ Fracaso.'; 
-      return { results:allRolls, successes:finalSuccess, isBotch, message:specialMsg, totalDiceThrown:allRolls.length, difficulty }; 
+      // Cálculo de éxitos netos: éxitos menos unos, pero mínimo 0
+      let netSuccesses = successCount - ones;
+      if (netSuccesses < 0) netSuccesses = 0;
+      
+      // Pifia solo si no hubo NINGÚN éxito original y al menos un 1
+      const isBotch = (successCount === 0 && ones > 0);
+      
+      let finalSuccess = netSuccesses;
+      let specialMsg = '';
+      if (isBotch) {
+        specialMsg = '💀 ¡PIFIA! Algo terrible sucede... 💀';
+      } else if (finalSuccess >= 5) {
+        specialMsg = '🌟 ¡ÉXITO ÉPICO! 🌟';
+      } else if (finalSuccess >= 3) {
+        specialMsg = '✨ ¡Éxito completo! ✨';
+      } else if (finalSuccess >= 1) {
+        specialMsg = '✔️ Éxito.';
+      } else {
+        specialMsg = '❌ Fracaso.';
+      }
+      return { results: allRolls, successes: finalSuccess, isBotch, message: specialMsg, totalDiceThrown: allRolls.length, difficulty };
     }
     
     function showRollingAnimation(durationMs,finalCallback){ 
@@ -628,7 +651,7 @@
     function updateDifficulty(){ currentDifficulty=parseInt(difficultySlider.value,10); difficultyValueSpan.innerText=currentDifficulty; }
     function updateCustomDice(){ pendingDiceCount=parseInt(customDiceSlider.value,10); customDiceIndicator.innerText=`${pendingDiceCount} dados`; currentSkillDice=null; }
     
-    playerNameDisplay.addEventListener('blur',function(){ let newName=this.innerText.trim().toUpperCase(); if(newName==="") newName=defaultPlayersData[currentPlayer].name; defaultPlayersData[currentPlayer].name=newName; this.innerText=newName; currentPlayerBadge.innerHTML=`🎭 ${newName}`; savePlayerToFirebase(currentPlayer); renderSkillsForCurrentPlayer(); });
+    playerNameDisplay.addEventListener('blur',function(){ let newName=this.innerText.trim(); if(newName==="") newName=defaultPlayersData[currentPlayer].name; defaultPlayersData[currentPlayer].name=newName; this.innerText=newName; currentPlayerBadge.innerHTML=`🎭 ${newName}`; savePlayerToFirebase(currentPlayer); renderSkillsForCurrentPlayer(); });
     customDiceSlider.addEventListener('input',updateCustomDice); difficultySlider.addEventListener('input',updateDifficulty); rollBtn.addEventListener('click',()=>performRollWithAnimation(null)); clearHistoryBtn.addEventListener('click',clearGlobalHistory);
     document.querySelectorAll('.tab-player').forEach(btn=>{ btn.addEventListener('click',()=>{ const pid=btn.getAttribute('data-player'); if(pid) switchPlayer(pid); }); });
     
